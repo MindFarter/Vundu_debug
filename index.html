@@ -1,0 +1,465 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Vundu_debug</title>
+<style>
+:root{--bg:#141414;--panel:#1c1c1c;--panel2:#242424;--line:#2c2c2c;--acc:#FFCC14;--acc-d:#3a3010;--txt:#f1efe8;--dim:#a09d92;--ok:#5ccf7a;--warn:#ff9f1a;--bad:#ff6b5e;--bad-d:#3a1616;--ok-d:#13301c;--warn-d:#38280b;
+--mono:ui-monospace,"JetBrains Mono","SFMono-Regular",Consolas,"Liberation Mono",monospace;--sans:system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0;background:var(--bg);color:var(--txt);font:14px/1.45 var(--sans)}
+button,input,select,textarea{font:inherit;color:inherit}
+button{background:var(--panel2);border:1px solid var(--line);border-radius:6px;padding:6px 12px;cursor:pointer}
+button:hover:not(:disabled){border-color:var(--acc)}
+button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible,.tab:focus-visible{outline:2px solid var(--acc);outline-offset:1px}
+button:disabled{opacity:.4;cursor:not-allowed}
+button.primary{background:var(--acc);border-color:var(--acc);color:#141414;font-weight:600}
+button.danger{border-color:#6b2a2a;color:#ff9b9b}
+input,select,textarea{background:#101010;border:1px solid var(--line);border-radius:6px;padding:6px 8px;width:100%}
+input[type=checkbox]{width:auto;accent-color:var(--acc)}
+label{display:block;color:var(--dim);font-size:12.5px;margin:10px 0 3px}
+label.chk{display:flex;gap:8px;align-items:center;color:var(--txt);font-size:13.5px;margin:7px 0}
+code,pre,.mono{font-family:var(--mono)}
+h2{font-size:15px;margin:0 0 10px;font-weight:600}
+h3{font-size:13px;margin:0 0 8px;color:var(--dim);font-weight:600}
+#app{display:grid;grid-template-columns:330px 1fr;grid-template-rows:auto 1fr;height:100%}
+header{grid-column:1/3;display:flex;align-items:center;gap:22px;padding:7px 18px;border-bottom:1px solid var(--line);background:var(--panel)}
+.brand{display:flex;align-items:center;gap:12px;white-space:nowrap}
+.brand img{height:46px;width:auto;filter:drop-shadow(0 0 3px rgba(255,204,20,.5))}
+.brand b{color:var(--acc);font-size:18px;letter-spacing:.02em}
+nav{align-self:stretch}
+#b-lab{margin-left:auto;border-color:var(--acc);color:var(--acc);font-weight:600;white-space:nowrap}
+#b-lab:hover{background:rgba(255,204,20,.14)}
+#pause{grid-column:1/3;display:none;align-items:center;justify-content:center;padding:24px}
+.pcard{max-width:520px;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:26px}
+.pcard h2{font-size:20px}
+body.paused #pause{display:flex}body.paused aside,body.paused main,body.paused nav{display:none}
+nav{display:flex;gap:2px;height:100%;overflow-x:auto}
+.tab{background:none;border:0;border-bottom:3px solid transparent;border-radius:0;padding:0 14px;color:var(--dim);height:100%;white-space:nowrap}
+.tab:hover{color:var(--txt)}
+.tab.on{color:var(--acc);border-bottom-color:var(--acc)}
+aside{border-right:1px solid var(--line);padding:14px;overflow:auto;background:#161616}
+main{padding:18px 22px;overflow:auto}
+.pane{display:none}.pane.on{display:block}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:14px;margin-bottom:14px}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:14px}
+.grid .card{margin:0}
+table{border-collapse:collapse;width:100%}
+td,th{padding:4px 8px;border-bottom:1px solid #262626;text-align:left;vertical-align:top}
+th{color:var(--dim);font-weight:500;font-size:12.5px}
+td.k{color:var(--dim);white-space:nowrap;width:1%}
+.mono td,td.mono,.mono{font-size:12.5px}
+.dev{border:1px solid var(--line);border-radius:8px;padding:9px 11px;margin-bottom:8px;cursor:pointer;background:var(--panel)}
+.dev.sel{border-color:var(--acc);background:var(--acc-d)}
+.dev b{display:block}.dev small{color:var(--dim)}
+.badge{display:inline-block;border-radius:10px;padding:0 8px;font-size:12px;border:1px solid var(--line);margin-right:4px}
+.b-ok{background:var(--ok-d);color:var(--ok);border-color:#1e5a31}.b-warn{background:var(--warn-d);color:var(--warn);border-color:#6b4a12}.b-bad{background:var(--bad-d);color:var(--bad);border-color:#6b2a2a}
+.lamps{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:12px}
+.lamp{display:flex;gap:7px;align-items:center;font-size:12.5px;color:var(--dim)}
+.lamp i{width:9px;height:9px;border-radius:50%;background:#444}
+.lamp.ok i{background:var(--ok);box-shadow:0 0 6px var(--ok)}.lamp.warn i{background:var(--warn)}.lamp.bad i{background:var(--bad)}
+.verdict{border-radius:8px;padding:12px 14px;margin:0 0 14px;border:1px solid}
+.verdict.ok{background:var(--ok-d);border-color:#1e5a31}.verdict.warn{background:var(--warn-d);border-color:#6b4a12}.verdict.bad{background:var(--bad-d);border-color:#6b2a2a}
+.verdict p{margin:4px 0}
+.hero{display:flex;align-items:baseline;gap:12px;margin-bottom:12px;flex-wrap:wrap}
+.hero .name{font-size:30px;font-weight:700;letter-spacing:-.5px}
+.hero .rev{color:var(--dim);font-family:var(--mono)}
+.chips span{display:inline-block;background:var(--panel2);border:1px solid var(--line);border-radius:5px;padding:1px 8px;margin:0 5px 5px 0;font-size:12.5px}
+.empty{color:var(--dim);border:1px dashed var(--line);border-radius:8px;padding:28px;text-align:center}
+.row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}.row>*{flex:0 0 auto}.row>.grow{flex:1 1 160px}
+.actions button{min-width:104px;padding:10px 14px}
+pre.log{background:#0e0e0e;border:1px solid var(--line);border-radius:8px;padding:10px;margin:0;height:340px;overflow:auto;white-space:pre-wrap;word-break:break-all;font-size:12.5px}
+pre.log .w{color:var(--warn)}pre.log .e{color:var(--bad)}pre.log .c{color:var(--acc)}
+.hex{font-family:var(--mono);font-size:12.5px}.hex td{border:0;padding:1px 6px;white-space:nowrap}
+.hex .ch{background:var(--acc);color:#141414;border-radius:2px}
+.state{font-family:var(--mono)}.st-halted{color:var(--warn)}.st-running{color:var(--ok)}
+.tip{color:var(--dim);font-size:12.5px;margin:6px 0 0}
+.diag{border-left:3px solid var(--warn);background:var(--warn-d);padding:8px 12px;margin:0 0 10px;border-radius:0 6px 6px 0}.diag b{display:block}
+#toasts{position:fixed;right:16px;bottom:16px;display:grid;gap:8px;z-index:9}
+.toast{background:#262626;border:1px solid var(--acc);border-radius:8px;padding:9px 13px;max-width:360px}
+details summary{cursor:pointer;color:var(--dim)}
+@media(max-width:900px){#app{grid-template-columns:1fr;grid-template-rows:auto auto 1fr;height:auto}header{grid-column:1}aside{border-right:0;border-bottom:1px solid var(--line)}}
+@media(prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+</head>
+<body>
+<div id="app">
+<header>
+  <div class="brand"><img src="/vundu_logo.png" alt="" onerror="this.remove()"><b>Vundu_debug</b></div>
+  <nav id="tabs" role="tablist"></nav>
+  <button id="b-lab" title="Stops the debug session and goes back to Vundu_lab">Vundu_lab</button>
+</header>
+<div id="pause" role="status"><div class="pcard">
+  <h2>Vundu_debug is paused</h2>
+  <p id="p-text">Vundu_lab has the board now. Only one of the two tools uses the board at a time, so the debugger is idle and has let go of it.</p>
+  <pre class="log" id="p-hint" hidden style="height:auto;user-select:all"></pre>
+  <div class="row" style="margin-top:14px"><button class="primary" id="p-lab">Open Vundu_lab</button><button id="p-resume">Resume debugger</button></div>
+</div></div>
+<aside>
+  <h2>Boards on USB</h2>
+  <div id="devs"></div>
+  <label class="chk"><input type="checkbox" id="showall"> Show other USB devices</label>
+  <label class="chk"><input type="checkbox" id="autoscan" checked> Read board details when plugged in</label>
+  <h2 style="margin-top:18px">Debug session</h2>
+  <label for="f-chip">Chip</label>
+  <select id="f-chip"></select>
+  <label for="f-mode">Debug interface</label>
+  <select id="f-mode">
+    <option value="builtin">Built-in USB JTAG (just the USB cable)</option>
+    <option value="ftdi">ESP-Prog / FT2232H adapter</option>
+    <option value="jlink">SEGGER J-Link</option>
+    <option value="custom">Custom OpenOCD config files</option>
+  </select>
+  <div id="f-custom-wrap" hidden><label for="f-custom">Config files (-f)</label><input id="f-custom" placeholder="interface/jlink.cfg target/esp32s3.cfg"></div>
+  <label for="f-speed">Adapter speed, kHz (blank = default)</label>
+  <input id="f-speed" inputmode="numeric" placeholder="e.g. 20000">
+  <label class="chk"><input type="checkbox" id="f-rtos" checked> FreeRTOS task awareness</label>
+  <label class="chk"><input type="checkbox" id="f-flash" checked> Flash access (breakpoints in flash code)</label>
+  <label class="chk"><input type="checkbox" id="f-pin"> Pin to this board's USB serial number</label>
+  <label for="f-extra">Extra OpenOCD arguments</label>
+  <input id="f-extra" placeholder='-c "log_output /tmp/ocd.log"'>
+  <div class="row" style="margin-top:12px">
+    <button class="primary" id="b-start">Start session</button>
+    <button class="danger" id="b-stop" disabled>Stop</button>
+  </div>
+  <div class="lamps" id="lamps"></div>
+</aside>
+<main>
+  <section class="pane" id="p-board"></section>
+  <section class="pane" id="p-control">
+    <div id="ctl-off" class="empty">No session yet. Pick a board, check the interface in the sidebar and press Start session.</div>
+    <div id="ctl-on" hidden>
+      <div class="card"><h2>Cores</h2><table id="cores"></table><p class="tip" id="pc-line"></p></div>
+      <div class="card actions"><h2>Run control</h2>
+        <div class="row">
+          <button data-t="halt">Halt</button><button data-t="resume" class="primary">Resume</button><button data-t="step">Step</button>
+          <button data-t="reset_halt">Reset and halt</button><button data-t="reset_run">Reset and run</button><button data-t="reset_init">Reset and init</button>
+        </div>
+        <p class="tip">Reset and halt stops the chip at the very first instruction. Use it before setting breakpoints in start-up code.</p>
+      </div>
+      <div class="card"><h2>Activity</h2><pre class="log" id="act" style="height:180px"></pre></div>
+    </div>
+  </section>
+  <section class="pane" id="p-regs">
+    <div class="row"><button id="r-go" class="primary">Read registers</button><label class="chk" style="margin:0"><input type="checkbox" id="r-auto"> Refresh while halted</label><input class="grow" id="r-filter" placeholder="Filter by name" aria-label="Filter registers"></div>
+    <p class="tip" id="r-msg">Halt the target first. Changed values are highlighted.</p>
+    <table class="card mono" id="r-tab" style="display:table"></table>
+  </section>
+  <section class="pane" id="p-mem">
+    <div class="card">
+      <div class="row">
+        <div style="width:170px"><label for="m-addr" style="margin-top:0">Address</label><input id="m-addr" class="mono" value="0x3fc88000"></div>
+        <div style="width:110px"><label for="m-len" style="margin-top:0">Bytes</label><select id="m-len"><option>64</option><option selected>256</option><option>512</option><option>1024</option><option>4096</option></select></div>
+        <button id="m-go" class="primary" style="margin-top:20px">Read</button>
+        <label class="chk" style="margin:20px 0 0"><input type="checkbox" id="m-live"> Live (1 s)</label>
+      </div>
+      <div class="chips" id="m-regions" style="margin-top:10px"></div>
+      <div class="row" style="margin-top:6px">
+        <div style="width:170px"><label for="m-wa" style="margin-top:0">Write word at</label><input id="m-wa" class="mono" placeholder="0x3fc88000"></div>
+        <div style="width:170px"><label for="m-wv" style="margin-top:0">Value</label><input id="m-wv" class="mono" placeholder="0x1234"></div>
+        <button id="m-write" style="margin-top:20px">Write</button>
+      </div>
+      <p class="tip">Reads work while the chip runs, but values can change under you. Writing to peripherals or live memory can crash the target.</p>
+    </div>
+    <div class="card"><table class="hex" id="m-dump"></table><p class="tip" id="m-msg"></p></div>
+  </section>
+  <section class="pane" id="p-bp">
+    <div class="grid">
+      <div class="card"><h2>Hardware breakpoint</h2>
+        <label for="bp-a">Address</label><input id="bp-a" class="mono" placeholder="0x42001234"><div class="row" style="margin-top:10px"><button id="bp-add" class="primary">Add breakpoint</button></div>
+        <p class="tip">The chip has only a few comparators. Flash code needs hardware breakpoints.</p></div>
+      <div class="card"><h2>Watchpoint</h2>
+        <div class="row"><div style="flex:1 1 140px"><label for="wp-a" style="margin-top:0">Address</label><input id="wp-a" class="mono" placeholder="0x3fc90000"></div>
+        <div style="width:90px"><label for="wp-l" style="margin-top:0">Length</label><select id="wp-l"><option>1</option><option>2</option><option selected>4</option><option>8</option></select></div>
+        <div style="width:110px"><label for="wp-k" style="margin-top:0">Stops on</label><select id="wp-k"><option value="write">write</option><option value="read">read</option><option value="access">access</option></select></div></div>
+        <div class="row" style="margin-top:10px"><button id="wp-add" class="primary">Add watchpoint</button></div></div>
+    </div>
+    <div class="card" style="margin-top:14px"><div class="row"><h2 style="margin:0">Active</h2><button id="bp-ref">Refresh</button></div><table id="bp-tab" class="mono" style="margin-top:8px"></table></div>
+  </section>
+  <section class="pane" id="p-gdb">
+    <div class="card">
+      <div class="row">
+        <div class="grow"><label for="g-elf" style="margin-top:0">Firmware ELF (full path on this computer)</label><input id="g-elf" class="mono" placeholder="/home/you/project/build/firmware.elf"></div>
+        <button id="g-up" style="margin-top:20px">Upload ELF...</button><input type="file" id="g-file" accept=".elf,*" hidden>
+      </div>
+      <div class="row" style="margin-top:10px">
+        <button id="g-start" class="primary">Start GDB</button><button id="g-attach">Attach to target</button><button id="g-stop" class="danger">Stop GDB</button><span class="tip" id="g-info" style="margin:0"></span>
+      </div>
+      <p class="tip">Use the ELF from the exact build that is flashed. A stale ELF is the usual reason breakpoints never hit. Debug builds keep variables visible.</p>
+    </div>
+    <pre class="log" id="g-out" style="height:360px"></pre>
+    <div class="row" style="margin-top:8px"><input class="grow mono" id="g-in" placeholder="gdb command, Enter to send (Up/Down for history)" aria-label="GDB command"><button id="g-send">Send</button></div>
+    <div class="row" id="g-quick" style="margin-top:8px"></div>
+  </section>
+  <section class="pane" id="p-ocd">
+    <div id="diags"></div>
+    <div class="row" style="margin-bottom:8px"><select id="o-filter" style="width:150px" aria-label="Log filter"><option value="">All lines</option><option value="warn">Warnings and errors</option><option value="err">Errors only</option></select><button id="o-copy">Copy log</button><button id="o-clear">Clear view</button><span class="tip" style="margin:0" id="o-cmd"></span></div>
+    <pre class="log" id="o-log"></pre>
+    <div class="row" style="margin-top:8px"><input class="grow mono" id="o-in" placeholder="OpenOCD command, e.g. targets, scan_chain, reg pc, mdw 0x3fc88000 4" aria-label="OpenOCD command"><button id="o-send">Run</button></div>
+    <div class="row" id="o-quick" style="margin-top:8px"></div>
+  </section>
+  <section class="pane" id="p-setup">
+    <div class="card"><h2>Tools</h2><table id="tools"></table>
+      <div class="row" style="margin-top:12px"><button id="i-all" class="primary">Install everything missing</button><button id="i-serial">Chip reader (esptool)</button><button id="i-ocd">OpenOCD</button><button id="i-gdb">GDB (Xtensa and RISC-V)</button></div>
+      <p class="tip">Everything installs inside this folder under data/engines/debug/. Tools already installed by ESP-IDF in ~/.espressif are found and used automatically.</p>
+      <pre class="log" id="i-log" style="height:150px;margin-top:10px"></pre></div>
+    <div class="card" id="udev-card"><h2>Linux: USB permission rule</h2>
+      <p class="tip" style="margin-top:0">OpenOCD talks to the JTAG function with libusb, which needs access to the raw USB device. Run this once, then unplug and replug the board.</p>
+      <pre class="log" id="udev" style="height:auto;user-select:all"></pre>
+      <div class="row" style="margin-top:8px"><button id="udev-copy">Copy commands</button></div></div>
+    <div class="card"><h2>Vundu_lab and Vundu_debug</h2>
+      <p class="tip" style="margin-top:0">The two tools are separate programs that take turns with the board. The Vundu_lab button (top right) stops the debug session, lets go of the board and opens Vundu_lab. Opening this page again resumes the debugger.</p></div>
+    <div class="card"><h2>About</h2>
+      <p class="tip" style="margin-top:0">Vundu_debug <span id="ver"></span>. MIT licence, Copyright (c) 2026 MindFarter, <a href="https://github.com/MindFarter" target="_blank" rel="noopener" style="color:var(--acc)">github.com/MindFarter</a>.</p>
+      <p class="tip">It runs OpenOCD (GPL-2.0), GDB (GPL-3.0) and esptool (GPL-2.0 or later), which are downloaded from Espressif's official sources onto your computer and are not part of this program. Not affiliated with Espressif or LCD Wizard.</p></div>
+  </section>
+</main>
+</div>
+<div id="toasts" aria-live="polite"></div>
+<script>
+const T="__TOKEN__";
+const $=(s,e=document)=>e.querySelector(s),$$=(s,e=document)=>[...e.querySelectorAll(s)];
+const esc=s=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const num=s=>{s=String(s).trim();return /^0x/i.test(s)?parseInt(s,16):parseInt(s,10)};
+const hex=(n,w=8)=>"0x"+n.toString(16).padStart(w,"0");
+async function api(p,b){const o={headers:{"X-Vundu-Token":T}};if(b!==undefined){o.method="POST";o.headers["Content-Type"]="application/json";o.body=JSON.stringify(b)}
+  const r=await fetch(p,o);const j=await r.json().catch(()=>({}));if(!r.ok)throw Object.assign(new Error(j.error||r.statusText),{status:r.status,fix:j.fix});return j}
+function toast(m){const d=document.createElement("div");d.className="toast";d.textContent=m;$("#toasts").append(d);setTimeout(()=>d.remove(),6000)}
+const S={devices:[],scans:{},chips:{},memmap:{},tools:{},ocd:{state:"stopped"},gdb:{running:false},lock:{locked:false},sel:null,cores:[],tab:"board",busy:{},prevRegs:{},prevMem:{}};
+const TABS=[["board","Board"],["control","Control"],["regs","Registers"],["mem","Memory"],["bp","Breakpoints"],["gdb","GDB"],["ocd","OpenOCD"],["setup","Setup"]];
+$("#tabs").innerHTML=TABS.map(([k,n])=>`<button class="tab" role="tab" data-tab="${k}">${n}</button>`).join("");
+function showTab(k){S.tab=k;$$(".tab").forEach(b=>b.classList.toggle("on",b.dataset.tab===k));$$(".pane").forEach(p=>p.classList.toggle("on",p.id==="p-"+k));if(k==="regs")readRegs();if(k==="bp")readBps();if(k==="ocd"){const l=$("#o-log");l.scrollTop=l.scrollHeight}}
+$("#tabs").onclick=e=>{const b=e.target.closest(".tab");if(b)showTab(b.dataset.tab)};
+
+/* ---------- plain-language diagnosis of OpenOCD messages ---------- */
+const UDEV_FIX="Linux needs a one-off USB permission rule. Press the button to see the commands, run them in a terminal, then unplug and replug the board.";
+// [pattern, id, title, what to do, ids that make this one redundant (it is only a knock-on error)]
+const DIAG=[
+ [/LIBUSB_ERROR_ACCESS|Permission denied/i,"access","Linux is blocking access to the board's USB JTAG interface",UDEV_FIX+" (Windows: bind the WinUSB driver to the board's JTAG interface with Zadig.)",[]],
+ [/LIBUSB_ERROR_NOT_FOUND|could not find or open device|no device found|libusb_open\(\) failed/i,"usb","OpenOCD cannot open the USB JTAG interface","Use the board's native USB socket (the one wired straight to the chip) and a short data cable, no hub. If the firmware is using the USB port itself, hold BOOT and tap RESET first.",["access"]],
+ [/Unsupported DTM version|Could not identify target type/i,"dtm","OpenOCD could not talk to the chip's debug module","This usually follows a USB problem: nothing reached the chip. Fix any USB message first. If USB is fine, check the wiring (external adapter), the JTAG eFuses on the Board tab, and that the firmware has not repurposed the JTAG pins.",["access","usb"]],
+ [/JTAG scan chain interrogation failed|all ones|all zeroes|Could not find a TAP|TAP .* not found/i,"scan","The chip does not answer on JTAG","Check the wiring (external adapter), that JTAG is not disabled by eFuse (Board tab), and that the firmware has not repurposed the JTAG or USB pins. Try again after holding BOOT and tapping RESET.",["access","usb","dtm"]],
+ [/Address already in use|couldn't bind|Can't bind/i,"port","A port is already taken","Another OpenOCD is still running. Close it (Linux: pkill openocd) and start again.",[]],
+ [/Can't find (board|target|interface)\/|can't find .*\.cfg|Can't open .*\.cfg/i,"cfg","This OpenOCD has no config for your chip","Reinstall the latest Espressif OpenOCD from Setup; older builds lack newer chips.",[]],
+ [/Examination failed|examine failed|Debug controller was reset|Failed to examine/i,"exam","The chip could not be examined","Press Reset and halt in Control. If it persists, the firmware may be rebooting in a loop or has put the chip to sleep: reflash a simple sketch, then try again.",["access","usb","dtm","scan"]],
+ [/Failed to get flash maps|Flash mapping|flash size/i,"flash","Flash access failed to start","Untick Flash access in the sidebar and restart the session, or check the board's flash size.",[]],
+ [/Target not halted|target not halted|not halted/i,"halt","The target is running","Press Halt first (or Reset and halt) before reading registers or stepping.",[]],
+ [/unknown chip|Unsupported (chip|target)|no matching target/i,"unsup","OpenOCD does not support this chip yet","Reinstall the newest Espressif OpenOCD from Setup.",[]],
+];
+const seenDiag=new Set();let lastDiag="";
+function diagnose(line){
+  for(const [rx,id,t,fix,sup] of DIAG){
+    if(!rx.test(line)||seenDiag.has(id)||sup.some(x=>seenDiag.has(x)))continue;
+    seenDiag.add(id);lastDiag=t;
+    const d=document.createElement("div");d.className="diag";
+    d.innerHTML=`<b>${esc(t)}</b>${esc(fix)}`+(id==="access"?'<div class="row" style="margin-top:8px"><button class="primary">Show the commands</button></div>':"");
+    const b=d.querySelector("button");if(b)b.onclick=()=>{showTab("board");$("main").scrollTop=0};
+    $("#diags").prepend(d);toast(t);break;
+  }
+}
+
+/* ---------- log views ---------- */
+const olog=[];
+function lineHtml(l){const c=/^Error|error:/i.test(l)?"e":/^Warn/i.test(l)?"w":/^\$ /.test(l)?"c":"";return `<span class="${c}">${esc(l)}</span>\n`}
+function addOcd(l){olog.push(l);if(olog.length>3000)olog.shift();diagnose(l);const f=$("#o-filter").value;if(passes(l,f)){const el=$("#o-log"),at=el.scrollTop+el.clientHeight>=el.scrollHeight-30;el.insertAdjacentHTML("beforeend",lineHtml(l));if(at)el.scrollTop=el.scrollHeight}}
+const passes=(l,f)=>!f||(f==="err"?/^Error/i.test(l):/^(Error|Warn)/i.test(l));
+function redrawOcd(){$("#o-log").innerHTML=olog.filter(l=>passes(l,$("#o-filter").value)).map(lineHtml).join("")}
+$("#o-filter").onchange=redrawOcd;$("#o-clear").onclick=()=>{olog.length=0;$("#o-log").innerHTML=""};
+$("#o-copy").onclick=()=>navigator.clipboard.writeText(olog.join("\n")).then(()=>toast("Log copied"));
+const act=(m)=>{const a=$("#act");a.insertAdjacentHTML("beforeend",esc(new Date().toLocaleTimeString()+"  "+m)+"\n");a.scrollTop=a.scrollHeight};
+
+/* ---------- devices and board details ---------- */
+const jtagBadge=d=>({builtin:'<span class="badge b-ok">built-in JTAG</span>',external:'<span class="badge b-ok">JTAG adapter</span>',uart:'<span class="badge b-warn">UART only</span>',none:'<span class="badge b-warn">no JTAG now</span>'}[d.kind]||"");
+function renderDevices(){
+  const el=$("#devs"),all=$("#showall").checked;
+  const list=S.devices.filter(d=>all||d.espressif||d.id===S.sel),hidden=S.devices.length-list.length;
+  const note=hidden&&!all?`<p class="tip">${hidden} other USB device${hidden>1?"s":""} hidden (not an ESP32 board or adapter).</p>`:"";
+  if(!list.length){el.innerHTML='<div class="empty">No boards found. Plug a board in with a USB data cable; its details appear here at once.</div>'+note;return}
+  el.innerHTML=list.map(d=>{const sc=S.scans[d.id],c=sc&&sc.chip;
+    return `<div class="dev ${d.id===S.sel?"sel":""}" data-id="${esc(d.id)}" tabindex="0"><b>${esc(c?c.full.split(" (")[0]:d.label)}</b><small class="mono">${d.vid}:${d.pid}${d.ports[0]?"  "+esc(d.ports[0]):""}</small><div style="margin-top:4px">${jtagBadge(d)}${sc&&sc.jtag?`<span class="badge b-${sc.jtag.level}">${{ok:"ready",warn:"check",bad:"blocked"}[sc.jtag.level]}</span>`:""}${d.espressif&&d.usb_access===false?'<span class="badge b-bad">needs USB rule</span>':""}</div></div>`}).join("")+note;
+}
+$("#showall").onchange=renderDevices;
+$("#devs").onclick=e=>{const d=e.target.closest(".dev");if(d)selectDev(d.dataset.id)};
+$("#devs").onkeydown=e=>{if(e.key==="Enter"){const d=e.target.closest(".dev");if(d)selectDev(d.dataset.id)}};
+function selectDev(id){S.sel=id;const sc=S.scans[id];if(sc&&sc.chip_key)$("#f-chip").value=sc.chip_key;const d=S.devices.find(x=>x.id===id);if(d){const m=d.kind==="external"?(d.vid==="1366"?"jlink":"ftdi"):"builtin";$("#f-mode").value=m;$("#f-mode").onchange()}renderDevices();renderBoard()}
+function kv(rows){const r=rows.filter(x=>x[1]!==undefined&&x[1]!=="");return r.length?`<table>${r.map(x=>`<tr><td class="k">${esc(x[0])}</td><td class="mono">${x[1]}</td></tr>`).join("")}</table>`:'<span class="tip">Not read yet. Choose the chip in the sidebar, or it fills in once the chip answers.</span>'}
+function renderBoard(){
+  const p=$("#p-board"),d=S.devices.find(x=>x.id===S.sel);
+  if(!d){p.innerHTML='<div class="empty"><h2>Plug in a board</h2>Chip, revision, flash, memory, security fuses and the JTAG route are read as soon as the USB device appears.<br>Works with the ESP32, S2, S3, C2, C3, C5, C6, C61, H2 and P4 boards on LCD Wizard\'s list.</div>';return}
+  if(!d.espressif){p.innerHTML=`<div class="empty"><h2>${esc(d.label)}</h2>This USB device (${d.vid}:${d.pid}) is not an ESP32 board or a JTAG adapter, so there is nothing to debug here. Pick your board in the list on the left.</div>`;return}
+  const sc=S.scans[d.id]||{},c=sc.chip||{},ck=sc.chip_key||$("#f-chip").value,chip=S.chips[ck];
+  const ver=sc.jtag?`<div class="verdict ${sc.jtag.level}"><b>${{ok:"JTAG is available",warn:"Check this before debugging",bad:"JTAG is blocked"}[sc.jtag.level]}</b>${sc.jtag.notes.map(n=>`<p>${esc(n)}</p>`).join("")}</div>`:"";
+  const perm=d.espressif&&d.usb_access===false?`<div class="verdict bad"><b>Linux is blocking the board's USB JTAG interface</b><p>OpenOCD cannot debug until your user is allowed to open it. This is a one-off fix: copy the commands below, run them in a terminal, then unplug and replug the board. This box disappears by itself once it works.</p><pre class="log" style="height:auto;user-select:all">${esc(S.udevCmd)}</pre><div class="row" style="margin-top:8px"><button class="primary" id="perm-copy">Copy commands</button></div></div>`:"";
+  const stage=S.busy[d.id]?`<div class="tip">${esc(S.busy[d.id])}</div>`:"";
+  const ef=sc.efuses&&Object.keys(sc.efuses).length?`<div class="card"><h2>JTAG and boot eFuses</h2><p class="tip" style="margin-top:0">Read-only. A set DIS_*JTAG fuse can never be undone.</p>${kv(Object.entries(sc.efuses).map(([k,v])=>[k,esc(v)]))}</div>`:"";
+  const usbp=chip&&chip.usbpins?`Built-in USB: D- on GPIO${chip.usbpins["D-"]}, D+ on GPIO${chip.usbpins["D+"]}`:"";
+  const pins=chip&&Object.keys(chip.pins||{}).length?"External JTAG: "+Object.entries(chip.pins).map(([k,v])=>`${k} GPIO${v}`).join(", "):(chip?"External JTAG pins: see the chip's datasheet":"");
+  const boards=chip?`<div class="card"><h2>LCD Wizard boards with ${esc(chip.name)}</h2><ul style="margin:0;padding-left:18px">${chip.boards.map(b=>`<li>${esc(b)}</li>`).join("")}</ul><p class="tip">A board's chip decides the debug route, not its brand: the chip is read from the real board above.</p></div>`:"";
+  p.innerHTML=`<div class="hero"><span class="name">${esc(c.full?c.full.split(" (")[0]:(chip?chip.name:d.label))}</span><span class="rev">${c.full?esc(c.rev||"")+" "+esc((c.full||"").match(/\(([^)]*)\)/)?.[1]||""):(chip?"chip not read yet":"")}</span><button id="rescan" style="margin-left:auto">${S.busy[d.id]?"Reading...":"Read again"}</button></div>${stage}
+  ${perm}${sc.error?`<div class="verdict warn"><b>Chip details unavailable</b><p>${esc(sc.error)}</p></div>`:""}${ver}
+  <div class="grid">
+   <div class="card"><h2>Chip</h2>${c.full?`<div class="chips">${(c.features||[]).map(f=>`<span>${esc(f)}</span>`).join("")}</div>`:""}${kv([["Crystal",esc(c.crystal)],["MAC",esc(c.mac)],["Cores",chip?(chip.cores+(chip.cores>1?" (dual core)":" (single core)")+(chip.lp?" + 1 low-power core":"")):""],["Architecture",chip?esc(chip.arch==="xtensa"?"Xtensa LX":"RISC-V"):""]])}</div>
+   <div class="card"><h2>Memory</h2>${!sc.flash?'<span class="tip">Not read yet. It appears as soon as the chip answers on its serial port.</span>':kv([["Flash",sc.flash?esc(sc.flash.size):""],["Flash maker",sc.flash&&sc.flash.manufacturer?esc((sc.flash.vendor||"unknown")+"  ("+sc.flash.manufacturer+":"+(sc.flash.device||"")+")"):""],["PSRAM",esc(sc.psram||"")]])}</div>
+   <div class="card"><h2>USB connection</h2>${kv([["Device",esc(d.label)],["VID:PID",d.vid+":"+d.pid],["Product",esc(d.product)],["Maker",esc(d.manufacturer)],["Serial number",esc(d.serial)],["Speed",d.speed?d.speed+" Mb/s":""],["Serial port",esc(d.ports.join(", ")||"none")],["Port access",d.port_access===null?"":(d.port_access?"ok":'<span class="badge b-bad">no permission</span>')],["USB access (JTAG)",d.usb_access===null||d.usb_access===undefined?"":(d.usb_access?"ok":'<span class="badge b-bad">needs udev rule</span>')]])}</div>
+   <div class="card"><h2>Security</h2>${sc.security&&sc.security.length?kv(sc.security.map(l=>{const m=l.split(/:\s*/);return [m[0],esc(m.slice(1).join(": "))]})):'<span class="tip">Not reported by this chip or not read yet.</span>'}</div>
+   ${ef}
+   <div class="card"><h2>JTAG wiring</h2>${kv([["Route",chip?(chip.usb?"Built-in USB Serial/JTAG (no adapter), or an external adapter":"External adapter only"):""],["USB pins",usbp.replace("Built-in USB: ","")],["External pins",pins.replace("External JTAG: ","")]])}</div>
+   ${boards}
+  </div>
+  ${sc.raw?`<details style="margin-top:6px"><summary>Raw esptool output</summary><pre class="log" style="height:auto;max-height:300px;margin-top:8px">${esc(Object.entries(sc.raw).map(([k,v])=>"== "+k+" ==\n"+v).join("\n"))}</pre></details>`:""}`;
+  const rs=$("#rescan");if(rs)rs.onclick=()=>scan(d.id);
+  const pc=$("#perm-copy");if(pc)pc.onclick=()=>navigator.clipboard.writeText(S.udevCmd).then(()=>toast("Commands copied. Paste them into a terminal."));
+}
+async function scan(id){S.busy[id]="Reading chip details...";renderBoard();try{await api("/api/scan",{id})}catch(e){delete S.busy[id];toast(e.message);renderBoard()}}
+
+/* ---------- sidebar and lamps ---------- */
+function fillChips(){$("#f-chip").innerHTML='<option value="">Choose chip...</option>'+Object.entries(S.chips).map(([k,c])=>`<option value="${k}">${esc(c.name)}${c.usb?"":" (external adapter only)"}</option>`).join("")}
+$("#f-mode").onchange=()=>{$("#f-custom-wrap").hidden=$("#f-mode").value!=="custom"};
+function lamp(label,cls){return `<div class="lamp ${cls}"><i></i>${esc(label)}</div>`}
+function renderLamps(){
+  const d=S.devices.find(x=>x.id===S.sel),sc=S.scans[S.sel],st=S.ocd.state;
+  const halted=S.cores.some(c=>c.state==="halted");
+  $("#lamps").innerHTML=lamp("USB "+(d?"connected":"none"),d?"ok":"")+lamp("JTAG "+(sc&&sc.jtag?({ok:"ready",warn:"check",bad:"blocked"}[sc.jtag.level]):"unknown"),sc&&sc.jtag?sc.jtag.level:"")
+   +lamp("OpenOCD "+st,st==="running"?"ok":st==="starting"?"warn":"")+lamp(S.cores.length?("Target "+(halted?"halted":"running")):"Target -",S.cores.length?(halted?"warn":"ok"):"")
+   +lamp("GDB "+(S.gdb.running?"running":"off"),S.gdb.running?"ok":"");
+  const on=st==="running"||st==="starting";$("#b-start").disabled=on;$("#b-stop").disabled=!on;
+  $("#ctl-off").hidden=st==="running";$("#ctl-on").hidden=st!=="running";
+}
+$("#autoscan").onchange=e=>api("/api/autoscan",{on:e.target.checked});
+$("#b-start").onclick=async()=>{
+  const d=S.devices.find(x=>x.id===S.sel),sc=S.scans[S.sel];
+  const o={chip:$("#f-chip").value||(sc&&sc.chip_key)||"",mode:$("#f-mode").value,custom:$("#f-custom").value,speed:$("#f-speed").value,rtos:$("#f-rtos").checked,flash:$("#f-flash").checked,pin_serial:$("#f-pin").checked||S.devices.filter(x=>x.kind==="builtin").length>1,serial:d?d.serial:"",device:S.sel,extra:$("#f-extra").value};
+  try{await api("/api/ocd/start",o);showTab("ocd");$("#o-cmd").textContent="";toast("Starting OpenOCD...")}catch(e){toast(e.message);if(e.fix==="udev"){showTab("board");$("main").scrollTop=0}else{addOcd("Error: "+e.message);showTab("ocd")}}
+};
+$("#b-stop").onclick=()=>api("/api/ocd/stop",{}).catch(e=>toast(e.message));
+
+/* ---------- control ---------- */
+async function pollStatus(){
+  if(S.ocd.state!=="running"){if(S.cores.length){S.cores=[];renderCores();renderLamps()}return}
+  try{const r=await api("/api/status");S.cores=r.cores;renderCores();renderLamps();
+    if(r.cores.some(c=>c.state==="halted")&&S.tab==="control"){const o=await api("/api/ocd",{cmd:"reg pc"}).catch(()=>null);const m=o&&o.out.match(/0x[0-9a-fA-F]+/);$("#pc-line").innerHTML=m?`Program counter <span class="mono">${m[0]}</span>`:""}else $("#pc-line").textContent="";
+    if(S.tab==="regs"&&$("#r-auto").checked&&r.cores.some(c=>c.state==="halted"))readRegs()}catch(e){}
+}
+function renderCores(){$("#cores").innerHTML=`<tr><th>Core</th><th>Type</th><th>State</th><th></th></tr>`+S.cores.map(c=>`<tr><td class="mono">${esc(c.name)}${c.current?" *":""}</td><td>${esc(c.type)}</td><td class="state st-${c.state}">${esc(c.state)}</td><td>${c.current?"":`<button data-core="${esc(c.name)}">Select</button>`}</td></tr>`).join("")}
+$("#cores").onclick=async e=>{const b=e.target.closest("[data-core]");if(b){await api("/api/target",{action:"select",name:b.dataset.core}).catch(x=>toast(x.message));act("Selected "+b.dataset.core);pollStatus()}};
+$("#ctl-on").onclick=async e=>{const b=e.target.closest("[data-t]");if(!b)return;try{const r=await api("/api/target",{action:b.dataset.t});act(b.textContent+(r.out?": "+r.out.split("\n")[0]:""));pollStatus()}catch(x){act("Failed: "+x.message);toast(x.message)}};
+
+/* ---------- registers ---------- */
+async function readRegs(){
+  if(S.ocd.state!=="running"){$("#r-msg").textContent="No session. Start one from the sidebar.";return}
+  try{const r=await api("/api/regs");$("#r-msg").textContent=r.regs.length?`${r.regs.length} registers shown (of ${r.total}). Changed values are highlighted.`:(r.text||"No register values. Halt the target first.");
+    const f=$("#r-filter").value.toLowerCase();
+    $("#r-tab").innerHTML=`<tr><th>Register</th><th>Hex</th><th>Decimal</th></tr>`+r.regs.filter(x=>!f||x.name.toLowerCase().includes(f)).map(x=>{const v=parseInt(x.value,16),ch=S.prevRegs[x.name]!==undefined&&S.prevRegs[x.name]!==x.value;return `<tr><td>${esc(x.name)}</td><td class="${ch?"hex":""}"><span class="${ch?"ch":""}">${esc(x.value)}</span></td><td>${x.bits<=32?v:""}</td></tr>`}).join("");
+    S.prevRegs=Object.fromEntries(r.regs.map(x=>[x.name,x.value]))}catch(e){$("#r-msg").textContent=e.message}
+}
+$("#r-go").onclick=readRegs;$("#r-filter").oninput=readRegs;
+
+/* ---------- memory ---------- */
+async function readMem(){
+  const a=num($("#m-addr").value),len=num($("#m-len").value);if(isNaN(a)){$("#m-msg").textContent="Enter an address like 0x3fc88000";return}
+  try{const r=await api("/api/mem",{addr:a,len});if(r.error){$("#m-msg").textContent=r.error;return}$("#m-msg").textContent="";
+    let h="";for(let i=0;i<r.bytes.length;i+=16){const row=r.bytes.slice(i,i+16);
+      h+=`<tr><td style="color:var(--dim)">${hex(a+i)}</td><td>${row.map((b,j)=>{const ch=S.prevMem[a+i+j]!==undefined&&S.prevMem[a+i+j]!==b;return `<span class="${ch?"ch":""}">${b==null?"??":b.toString(16).padStart(2,"0")}</span>`}).join(" ")}</td><td style="color:var(--dim)">${esc(row.map(b=>b>=32&&b<127?String.fromCharCode(b):".").join(""))}</td></tr>`}
+    r.bytes.forEach((b,i)=>S.prevMem[a+i]=b);$("#m-dump").innerHTML=h}catch(e){$("#m-msg").textContent=e.message}
+}
+$("#m-go").onclick=()=>{S.prevMem={};readMem()};
+$("#m-addr").onkeydown=e=>{if(e.key==="Enter"){S.prevMem={};readMem()}};
+$("#m-write").onclick=async()=>{const a=num($("#m-wa").value),v=num($("#m-wv").value);if(isNaN(a)||isNaN(v))return toast("Enter an address and a value");try{await api("/api/mem",{addr:a,write:v});toast("Wrote "+hex(v)+" to "+hex(a))}catch(e){toast(e.message)}};
+function renderRegions(){const ck=S.chips[$("#f-chip").value]?$("#f-chip").value:(S.scans[S.sel]||{}).chip_key,m=S.memmap[ck]||[];$("#m-regions").innerHTML=m.length?m.map(([n,a])=>`<span><a href="#" data-a="${a}" style="color:var(--acc);text-decoration:none">${esc(n)}</a> ${hex(a)}</span>`).join(""):'<span class="tip">'+(ck?"No region shortcuts for this chip yet; type an address above.":"Pick a chip to see its main memory regions.")+'</span>'}
+$("#m-regions").onclick=e=>{const a=e.target.closest("[data-a]");if(a){e.preventDefault();$("#m-addr").value=hex(+a.dataset.a);S.prevMem={};readMem()}};
+$("#f-chip").onchange=renderRegions;
+setInterval(()=>{if($("#m-live").checked&&S.tab==="mem"&&S.ocd.state==="running")readMem()},1000);
+
+/* ---------- breakpoints ---------- */
+async function readBps(){
+  if(S.ocd.state!=="running"){$("#bp-tab").innerHTML='<tr><td class="tip">No session.</td></tr>';return}
+  try{const r=await api("/api/bps");let h="<tr><th>Kind</th><th>Address</th><th>Length</th><th></th></tr>";
+    h+=r.bps.map(b=>`<tr><td>breakpoint${b.hw?" (hardware)":""}</td><td>${esc(b.addr)}</td><td>${esc(b.len)}</td><td><button data-del="${esc(b.addr)}" data-op="del">Remove</button></td></tr>`).join("");
+    h+=r.wps.map(w=>`<tr><td>watchpoint (${esc(w.kind)})</td><td>${esc(w.addr)}</td><td>${esc(w.len)}</td><td><button data-del="${esc(w.addr)}" data-op="wdel">Remove</button></td></tr>`).join("");
+    if(!r.bps.length&&!r.wps.length)h+='<tr><td colspan="4" class="tip">None set.</td></tr>';$("#bp-tab").innerHTML=h}catch(e){toast(e.message)}
+}
+$("#bp-ref").onclick=readBps;
+$("#bp-tab").onclick=async e=>{const b=e.target.closest("[data-del]");if(!b)return;try{await api("/api/bp",{op:b.dataset.op,addr:num(b.dataset.del)});readBps()}catch(x){toast(x.message)}};
+$("#bp-add").onclick=async()=>{const a=num($("#bp-a").value);if(isNaN(a))return toast("Enter an address");try{const r=await api("/api/bp",{op:"add",addr:a});if(r.out)toast(r.out.split("\n")[0]);readBps()}catch(e){toast(e.message)}};
+$("#wp-add").onclick=async()=>{const a=num($("#wp-a").value);if(isNaN(a))return toast("Enter an address");try{const r=await api("/api/bp",{op:"wadd",addr:a,len:+$("#wp-l").value,kind:$("#wp-k").value});if(r.out)toast(r.out.split("\n")[0]);readBps()}catch(e){toast(e.message)}};
+
+/* ---------- OpenOCD console ---------- */
+const hist={ocd:[],gdb:[]},hpos={ocd:0,gdb:0};
+function histKeys(inp,key,send){inp.onkeydown=e=>{if(e.key==="Enter"){const v=inp.value.trim();if(v){hist[key].push(v);hpos[key]=hist[key].length;send(v);inp.value=""}}else if(e.key==="ArrowUp"&&hpos[key]>0){inp.value=hist[key][--hpos[key]];e.preventDefault()}else if(e.key==="ArrowDown"){hpos[key]=Math.min(hist[key].length,hpos[key]+1);inp.value=hist[key][hpos[key]]||"";e.preventDefault()}}}
+async function ocdCmd(c){addOcd("> "+c);try{const r=await api("/api/ocd",{cmd:c});(r.out||"(no output)").split("\n").forEach(addOcd)}catch(e){addOcd("Error: "+e.message)}}
+histKeys($("#o-in"),"ocd",ocdCmd);$("#o-send").onclick=()=>{const v=$("#o-in").value.trim();if(v){ocdCmd(v);$("#o-in").value=""}};
+$("#o-quick").innerHTML=["targets","scan_chain","reg pc","adapter speed","flash banks","version"].map(c=>`<button data-c="${c}">${c}</button>`).join("");
+$("#o-quick").onclick=e=>{const b=e.target.closest("[data-c]");if(b)ocdCmd(b.dataset.c)};
+
+/* ---------- GDB ---------- */
+const gOut=$("#g-out");
+function gAdd(t){const at=gOut.scrollTop+gOut.clientHeight>=gOut.scrollHeight-30;gOut.append(document.createTextNode(t));if(at)gOut.scrollTop=gOut.scrollHeight}
+function gArch(){const k=$("#f-chip").value||(S.scans[S.sel]||{}).chip_key;return (S.chips[k]||{}).arch||"xtensa"}
+$("#g-start").onclick=async()=>{try{await api("/api/gdb/start",{arch:gArch(),chip:$("#f-chip").value||(S.scans[S.sel]||{}).chip_key||"",elf:$("#g-elf").value.trim()})}catch(e){toast(e.message);gAdd("[error] "+e.message+"\n")}};
+$("#g-attach").onclick=async()=>{if(!S.gdb.running)return toast("Start GDB first");if(S.ocd.state!=="running")return toast("Start the OpenOCD session first");const k=$("#f-chip").value||(S.scans[S.sel]||{}).chip_key;try{await api("/api/gdb/attach",{wp:(S.chips[k]||{}).wp||0})}catch(e){toast(e.message)}};
+$("#g-stop").onclick=()=>api("/api/gdb/stop",{}).catch(e=>toast(e.message));
+const gSend=async c=>{gAdd("(cmd) "+c+"\n");try{await api("/api/gdb",{cmd:c})}catch(e){gAdd("[error] "+e.message+"\n")}};
+histKeys($("#g-in"),"gdb",gSend);$("#g-send").onclick=()=>{const v=$("#g-in").value.trim();if(v){gSend(v);$("#g-in").value=""}};
+const GQ=[["Backtrace","bt"],["All task stacks","thread apply all bt"],["Threads (FreeRTOS)","info threads"],["Registers","info registers"],["Locals","info locals"],["Continue","continue"],["Next","next"],["Step in","step"],["Finish","finish"],["Breakpoints","info breakpoints"],["Reset and halt","monitor reset halt"],["Stack words","x/16xw $sp"]];
+$("#g-quick").innerHTML=GQ.map(([n,c])=>`<button data-g="${esc(c)}">${n}</button>`).join("");
+$("#g-quick").onclick=e=>{const b=e.target.closest("[data-g]");if(b)gSend(b.dataset.g)};
+$("#g-up").onclick=()=>$("#g-file").click();
+$("#g-file").onchange=async e=>{const f=e.target.files[0];if(!f)return;const r=await fetch("/api/elf?name="+encodeURIComponent(f.name),{method:"POST",headers:{"X-Vundu-Token":T},body:await f.arrayBuffer()});const j=await r.json();if(j.path){$("#g-elf").value=j.path;toast("Uploaded "+f.name)}else toast(j.error||"Upload failed")};
+
+/* ---------- setup ---------- */
+function renderTools(){const t=S.tools,r=(n,ok,det)=>`<tr><td>${n}</td><td>${ok?'<span class="badge b-ok">installed</span>':'<span class="badge b-warn">missing</span>'}</td><td class="mono tip" style="margin:0">${esc(det||"")}</td></tr>`;
+  $("#tools").innerHTML=r("Chip reader (esptool, pyserial)",t.esptool&&t.pyserial,t.esptool?"in data/engines/debug/venv":"")+r("OpenOCD (Espressif build)",t.openocd&&t.openocd.path&&t.openocd.scripts,t.openocd&&(t.openocd.version||t.openocd.path))+r("GDB for Xtensa (ESP32, S2, S3)",t.gdb_xtensa&&t.gdb_xtensa.path,t.gdb_xtensa&&t.gdb_xtensa.path)+r("GDB for RISC-V (C3, C5, C6, H2, P4)",t.gdb_riscv&&t.gdb_riscv.path,t.gdb_riscv&&t.gdb_riscv.path)}
+for(const [id,w] of [["i-all","all"],["i-serial","serial"],["i-ocd","openocd"],["i-gdb","gdb"]])$("#"+id).onclick=()=>{$("#i-log").textContent="";api("/api/install",{what:w}).catch(e=>toast(e.message))};
+$("#udev-copy").onclick=()=>navigator.clipboard.writeText($("#udev").textContent).then(()=>toast("Copied"));
+
+/* ---------- handing the board to Vundu_lab and back ---------- */
+function setPaused(p){S.paused=p;document.body.classList.toggle("paused",p);if(!p){$("#p-hint").hidden=true;$("#p-text").textContent="Vundu_lab has the board now. Only one of the two tools uses the board at a time, so the debugger is idle and has let go of it."}}
+function labMissing(r){$("#p-text").textContent="Vundu_lab is not running. Start it in a terminal, then press Open Vundu_lab again:";$("#p-hint").hidden=false;$("#p-hint").textContent=r.hint||"python3 vundu_lab.py"}
+async function goLab(){
+  if((S.ocd.state!=="stopped"||S.gdb.running)&&!confirm("Going back to Vundu_lab stops the debug session (OpenOCD and GDB). Continue?"))return;
+  try{const r=await api("/api/handoff",{});setPaused(true);if(r.lab)location.href=r.lab;else labMissing(r)}catch(e){toast(e.message)}
+}
+$("#b-lab").onclick=goLab;
+$("#p-lab").onclick=async()=>{try{const r=await api("/api/lab");if(r.lab)location.href=r.lab;else labMissing(r)}catch(e){toast(e.message)}};
+$("#p-resume").onclick=async()=>{try{await api("/api/resume",{});setPaused(false)}catch(e){toast(e.message)}};
+addEventListener("pageshow",e=>{if(e.persisted)location.reload()});
+
+/* ---------- events and boot ---------- */
+function connect(){
+  const es=new EventSource("/api/events?t="+T);
+  es.addEventListener("usb",e=>{const m=JSON.parse(e.data),old=S.devices;S.devices=m.devices;
+    m.removed.forEach(id=>{const was=old.find(x=>x.id===id);delete S.scans[id];delete S.busy[id];if(was&&was.espressif)toast("Unplugged: "+was.label)});
+    if(S.sel&&!S.devices.some(x=>x.id===S.sel))S.sel=null;                         // the device being shown went away
+    m.added.forEach(id=>{const d=S.devices.find(x=>x.id===id);if(!d||!d.espressif)return;toast("Board plugged in: "+d.label);
+      const cur=S.devices.find(x=>x.id===S.sel);
+      if(!cur||!cur.espressif){selectDev(id);showTab("board")}else if($("#autoscan").checked)S.busy[id]="Reading chip details..."});
+    if(!S.sel){const b=S.devices.find(x=>x.espressif);if(b)selectDev(b.id)}       // never fall back to an unrelated USB device
+    renderDevices();renderBoard();renderLamps()});
+  es.addEventListener("notice",e=>{const m=JSON.parse(e.data);toast(m.msg);addOcd("Warn : "+m.msg)});
+  es.addEventListener("scan",e=>{const m=JSON.parse(e.data);if(m.stage){S.busy[m.id]=m.stage;if(m.id===S.sel)renderBoard();return}delete S.busy[m.id];
+    if(m.error&&!m.device){toast(m.error);renderBoard();return}S.scans[m.id]=m;if(!S.sel)S.sel=m.id;if(m.id===S.sel&&m.chip_key){$("#f-chip").value=m.chip_key;renderRegions()}renderDevices();renderBoard();renderLamps()});
+  es.addEventListener("ocd_log",e=>addOcd(JSON.parse(e.data)));
+  es.addEventListener("ocd_state",e=>{const prev=S.ocd.state;S.ocd=JSON.parse(e.data);
+    if(S.ocd.state==="starting"){seenDiag.clear();$("#diags").innerHTML="";lastDiag=""}
+    if(S.ocd.state==="running")toast("OpenOCD is up. Debugging is live.");
+    if(S.ocd.state==="stopped"){S.cores=[];if(prev!=="stopped"&&lastDiag)toast("OpenOCD stopped: "+lastDiag)}$("#o-cmd").textContent=S.ocd.cmd||"";renderLamps();pollStatus()});
+  es.addEventListener("gdb",e=>gAdd(JSON.parse(e.data)));
+  es.addEventListener("gdb_state",e=>{S.gdb=JSON.parse(e.data);$("#g-info").textContent=S.gdb.running?S.gdb.path:"";renderLamps()});
+  es.addEventListener("install",e=>{const m=JSON.parse(e.data),l=$("#i-log");l.append(document.createTextNode(m.msg+"\n"));l.scrollTop=l.scrollHeight;if(m.kind==="error")toast(m.msg)});
+  es.addEventListener("tools",e=>{S.tools=JSON.parse(e.data);renderTools()});
+  es.addEventListener("paused",e=>setPaused(JSON.parse(e.data).paused));
+}
+async function boot(){
+  const s=await api("/api/state");Object.assign(S,{chips:s.chips,memmap:s.memmap,tools:s.tools,ocd:s.ocd,gdb:s.gdb,devices:s.devices,scans:s.scans});
+  $("#autoscan").checked=s.autoscan;fillChips();S.udevCmd=s.udev_cmd;$("#udev").textContent=S.udevCmd;
+  $("#udev-card").hidden=s.platform.indexOf("linux")!==0;
+  (s.ocd_log||[]).forEach(l=>olog.push(l));redrawOcd();renderTools();$("#ver").textContent="V"+s.version;
+  const first=S.devices.find(d=>d.espressif);if(first)selectDev(first.id);else{renderDevices();renderBoard()}
+  renderRegions();renderLamps();showTab("board");connect();
+  await api("/api/resume",{});setPaused(false);setInterval(pollStatus,1500)
+}
+boot().catch(e=>{document.body.innerHTML='<pre style="padding:20px">Could not reach the Vundu_debug server: '+esc(e.message)+'</pre>'});
+</script>
+</body>
+</html>
