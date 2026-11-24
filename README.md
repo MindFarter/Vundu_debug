@@ -1,4 +1,4 @@
-# Vundu_debug V0.1.3
+# Vundu_debug V0.1.3    [![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/MindFarter/Vundu_debug)
 
 A JTAG debugger for ESP32-family boards, in your browser, on your own computer.
 You plug a board in with a USB cable and it shows you the chip, flash, security
